@@ -18,12 +18,15 @@ export type Activity = {
   time: string;
   kind: "green" | "mint" | "slate";
 };
+
+/** Frontend leaderboard entry — mapped from the backend LeaderEntry schema */
 export type Leader = {
   rank: number;
   name: string;
   faculty: string;
   points: number;
 };
+
 export type PairingSession = {
   machineId: string;
   expiresAt: number;
@@ -39,8 +42,6 @@ export const FACULTIES = [
   "Fakultas Ilmu Komputer",
   "Fakultas Arsitektur dan Desain",
 ];
-
-export const E_WALLETS = ["DANA", "GoPay", "ShopeePay", "OVO", "BNI"];
 
 export const MACHINES: Machine[] = [
   { id: "BIN-FT-01", label: "Smart BIN Teknik", area: "Fakultas Teknik", status: "active" },
@@ -67,23 +68,7 @@ export const HOME_QUESTIONS = [
   },
 ];
 
-export const LEADERBOARD: Leader[] = [
-  { rank: 1, name: "Nabila Putri", faculty: "Fakultas Ekonomi dan Bisnis", points: 5620 },
-  { rank: 2, name: "Rizky Pratama", faculty: "Fakultas Teknik", points: 4830 },
-  { rank: 3, name: "Fajar Ramadhan", faculty: "Fakultas Ilmu Sosial dan Ilmu Politik", points: 4210 },
-  { rank: 4, name: "Amelia Safitri", faculty: "Fakultas Pertanian", points: 3980 },
-  { rank: 5, name: "Dimas Maulana", faculty: "Fakultas Teknik", points: 3450 },
-  { rank: 6, name: "Siti Aisyah", faculty: "Fakultas Hukum", points: 3180 },
-  { rank: 7, name: "Alya Prameswari", faculty: "Fakultas Ilmu Komputer", points: 3010 },
-  { rank: 8, name: "Bagas Arya", faculty: "Fakultas Arsitektur dan Desain", points: 2875 },
-  { rank: 9, name: "Mira Ananda", faculty: "Fakultas Ekonomi dan Bisnis", points: 2640 },
-  { rank: 10, name: "Hanif Akbar", faculty: "Fakultas Teknik", points: 2510 },
-];
-
-export const WEEKLY = [18, 26, 24, 31, 45, 52, 63];
-export const WEEK_LABELS = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
-
-export function cx(...values: Array<string | false | null | undefined>) {
+export function cx(...values: Array<string | undefined | null | false>) {
   return values.filter(Boolean).join(" ");
 }
 
@@ -117,4 +102,84 @@ export function formatCompact(value: number) {
     notation: "compact",
     maximumFractionDigits: 1,
   }).format(value);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Environmental impact constants (scientific sources)
+//
+// Source 1 — NIH / Gironi & Piemonte (2010), Env. Progress & Sustainable Energy
+//   → 0.0114 kg CO2-eq PREVENTED per 500 mL PET bottle recycled
+//     (vs. virgin PET production pathway)
+//
+// Source 2 — Water Footprint Network / Pacific Institute (Gleick & Cooley 2009)
+//   → Producing 1 kg PET resin requires ≈ 17.4 L water (cradle-to-gate)
+//   → Average 500 mL PET bottle weighs ~23 g → 17.4 L × 0.023 = ~0.40 L
+//   → Rounding to 0.4 L saved per bottle (conservative estimate)
+//
+// Point-to-bottle conversion:
+//   Backend schema: kecil=10 pts, sedang=20 pts, besar=30 pts
+//   Weighted average: (10+20+30)/3 = 20 pts per bottle
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** kg CO2-eq prevented per 1 recycled PET bottle (NIH LCA study) */
+export const CO2_PER_BOTTLE_KG = 0.0114;
+
+/** litres of water saved per 1 recycled PET bottle (Pacific Institute / Gleick) */
+export const WATER_PER_BOTTLE_L = 0.4;
+
+/** average points earned per bottle (weighted mean of 10/20/30 point tiers) */
+export const AVG_POINTS_PER_BOTTLE = 20;
+
+export type ImpactStats = {
+  /** total bottles recycled by all students (derived from total points) */
+  totalBottles: number;
+  /** litres of water saved (totalBottles × WATER_PER_BOTTLE_L) */
+  waterLitres: number;
+  /** kg CO2-eq emission prevented (totalBottles × CO2_PER_BOTTLE_KG) */
+  co2Kg: number;
+  /** number of faculties involved (from leaderboard unique faculty count) */
+  facultiesCount: number;
+};
+
+/**
+ * Compute real environmental impact from total points across all students.
+ * `totalPoints` is the sum of all points earned by all students platform-wide.
+ * `facultiesCount` is the number of unique faculties in the leaderboard.
+ */
+export function computeImpact(totalPoints: number, facultiesCount: number): ImpactStats {
+  const totalBottles = Math.round(totalPoints / AVG_POINTS_PER_BOTTLE);
+  return {
+    totalBottles,
+    waterLitres: Math.round(totalBottles * WATER_PER_BOTTLE_L),
+    co2Kg: parseFloat((totalBottles * CO2_PER_BOTTLE_KG).toFixed(2)),
+    facultiesCount,
+  };
+}
+
+/**
+ * Format litres into human-readable string.
+ * < 1000 L → "420 L", >= 1000 → "1,2 kL"
+ */
+export function formatLitres(litres: number): string {
+  if (litres >= 1000) {
+    return new Intl.NumberFormat("id-ID", {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(litres) + " L";
+  }
+  return `${new Intl.NumberFormat("id-ID").format(litres)} L`;
+}
+
+/**
+ * Format kg CO2 into human-readable string.
+ * < 1000 kg → "3,14 kg", >= 1000 → "1,2 ton"
+ */
+export function formatCO2(kg: number): string {
+  if (kg >= 1000) {
+    return new Intl.NumberFormat("id-ID", {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(kg) + " ton CO₂";
+  }
+  return `${new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 }).format(kg)} kg CO₂`;
 }

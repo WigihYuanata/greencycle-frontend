@@ -20,25 +20,27 @@ function NavItem({
   return (
     <button
       onClick={onClick}
+      aria-label={label}
       className={cx(
-        "flex flex-col items-center gap-1 flex-1 py-2 transition-all duration-150",
-        active ? "text-emerald-400" : "text-muted-foreground hover:text-foreground",
+        "flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl transition-all duration-150 min-w-0",
+        active
+          ? "text-emerald-400"
+          : "text-muted-foreground hover:text-foreground",
       )}
-      aria-current={active ? "page" : undefined}
     >
       {icon}
-      <span className="text-[0.58rem] font-bold tracking-wide">{label}</span>
+      <span className="text-[10px] font-medium truncate">{label}</span>
     </button>
   );
 }
 
 export default function BottomNav({ active, onGoHome, onGoDashboard, onOpenPairing, onGoLeaderboard, onGoAccount }: Props) {
   return (
-    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-40 px-0">
-      <nav
-        className="flex items-center bg-card/95 border-t border-border backdrop-blur-xl pb-safe-area-inset-bottom"
-        aria-label="Navigasi utama"
-      >
+    <nav
+      aria-label="Navigasi bawah"
+      className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-background/95 backdrop-blur-md border-t border-border/50 px-2 pb-safe"
+    >
+      <div className="flex items-end justify-around">
         <NavItem
           active={active === "home"}
           label="Beranda"
@@ -47,21 +49,21 @@ export default function BottomNav({ active, onGoHome, onGoDashboard, onOpenPairi
         />
         <NavItem
           active={active === "dashboard"}
-          label="Poin"
+          label="Dashboard"
           icon={<TrendingUp className="w-5 h-5" />}
           onClick={onGoDashboard}
         />
 
         {/* center CTA button */}
-        <div className="flex flex-col items-center flex-1 py-1.5 -mt-5">
+        <div className="flex flex-col items-center gap-0.5 py-1">
           <button
             onClick={onOpenPairing}
-            aria-label="Hubungkan kartu KTM"
-            className="w-14 h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/35 transition-all duration-150 border-4 border-card"
+            aria-label="Buka pairing"
+            className="w-12 h-12 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 active:scale-95 transition-all duration-150"
           >
-            <Scan className="w-6 h-6" />
+            <Scan className="w-5 h-5 text-slate-950" />
           </button>
-          <span className="text-[0.55rem] font-bold text-emerald-400 mt-1 tracking-wide">Pairing</span>
+          <span className="text-[10px] font-medium text-muted-foreground">Pairing</span>
         </div>
 
         <NavItem
@@ -76,7 +78,7 @@ export default function BottomNav({ active, onGoHome, onGoDashboard, onOpenPairi
           icon={<User className="w-5 h-5" />}
           onClick={onGoAccount}
         />
-      </nav>
-    </div>
+      </div>
+    </nav>
   );
 }

@@ -1,5 +1,7 @@
-import GreenCycleApp from "@/components/gc/GreenCycleApp";
+'use client'
 
-export default function Page() {
-  return <GreenCycleApp />;
+import GreenCycleApp from '@/components/gc/GreenCycleApp'
+
+export default function Home() {
+  return <GreenCycleApp />
 }

@@ -1,6 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Trophy, Medal } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cx, formatPoints, Leader } from "@/lib/gc-data";
 
 type Scope = "minggu" | "bulan" | "semua";
@@ -9,37 +11,100 @@ type Props = {
   scope: Scope;
   setScope: React.Dispatch<React.SetStateAction<Scope>>;
   leaderboard: Leader[];
+  isLoading: boolean;
   onGoDashboard: () => void;
   onGoPairing: () => void;
 };
 
-const rankMedal: Record<number, string> = { 1: "1st", 2: "2nd", 3: "3rd" };
+const RANK_COLORS: Record<number, { bg: string; text: string; medal: string }> = {
+  1: { bg: "bg-amber-500/15 border-amber-500/30", text: "text-amber-400", medal: "text-amber-400" },
+  2: { bg: "bg-slate-400/10 border-slate-400/20", text: "text-slate-300", medal: "text-slate-300" },
+  3: { bg: "bg-amber-700/10 border-amber-700/20", text: "text-amber-600", medal: "text-amber-600" },
+};
 
-export default function LeaderboardScreen({ scope, setScope, leaderboard, onGoDashboard, onGoPairing }: Props) {
+function PodiumCard({ item }: { item: Leader }) {
+  const colors = RANK_COLORS[item.rank];
+  const initials = item.name.split(" ").map((p) => p[0]).slice(0, 2).join("");
+  return (
+    <div className={cx(
+      "flex flex-col items-center gap-2 p-3 rounded-2xl border flex-1",
+      colors?.bg ?? "bg-secondary/50 border-border",
+    )}>
+      {item.rank === 1 && <Trophy className="w-4 h-4 text-amber-400" />}
+      <div className={cx(
+        "w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm",
+        colors?.bg ?? "bg-secondary",
+      )}>
+        <span className={cx("font-bold", colors?.text ?? "text-muted-foreground")}>
+          {initials}
+        </span>
+      </div>
+      <div className="text-center">
+        <p className="text-xs font-bold text-foreground text-balance leading-tight">{item.name}</p>
+        <p className="text-[9px] text-muted-foreground mt-0.5 line-clamp-1">{item.faculty}</p>
+      </div>
+      <span className={cx("text-sm font-bold", colors?.text ?? "text-foreground")}>
+        {formatPoints(item.points)}
+      </span>
+      <span className={cx(
+        "text-[10px] font-bold px-2 py-0.5 rounded-full",
+        colors?.bg ?? "bg-secondary",
+        colors?.text ?? "text-muted-foreground",
+      )}>
+        #{item.rank}
+      </span>
+    </div>
+  );
+}
+
+function LoadingLeaderboard() {
+  return (
+    <div className="px-4 pt-5 flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-4 w-24 rounded" />
+        <Skeleton className="h-7 w-40 rounded" />
+        <Skeleton className="h-4 w-64 rounded" />
+      </div>
+      <div className="flex gap-1 p-1 rounded-2xl bg-secondary/60 border border-border">
+        {[...Array(3)].map((_, i) => <Skeleton key={i} className="flex-1 h-9 rounded-xl" />)}
+      </div>
+      <div className="flex gap-2">
+        {[...Array(3)].map((_, i) => <Skeleton key={i} className="flex-1 h-32 rounded-2xl" />)}
+      </div>
+      <div className="flex flex-col gap-2">
+        {[...Array(7)].map((_, i) => <Skeleton key={i} className="h-14 rounded-2xl" />)}
+      </div>
+    </div>
+  );
+}
+
+export default function LeaderboardScreen({ scope, setScope, leaderboard, isLoading, onGoDashboard, onGoPairing }: Props) {
+  if (isLoading) return <LoadingLeaderboard />;
+
   const top3 = leaderboard.slice(0, 3);
   const rest = leaderboard.slice(3);
 
+  // Podium ordering: 2nd, 1st, 3rd
+  const podiumOrder = [top3[1], top3[0], top3[2]].filter(Boolean);
+
   return (
-    <div className="flex flex-col gap-7 pt-2 pb-4">
+    <section className="px-4 pt-5 flex flex-col gap-6" aria-label="Leaderboard">
+
       {/* ── HEADER ── */}
-      <motion.section
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
-      >
-        <div className="text-[0.65rem] font-black uppercase tracking-widest text-emerald-400 mb-1">Leaderboard</div>
-        <h2 className="text-2xl font-black tracking-tight text-foreground leading-none">Top kontributor</h2>
-        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+        <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Peringkat</p>
+        <h1 className="text-xl font-bold text-foreground mt-0.5">Leaderboard</h1>
+        <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
           Peringkat berdasarkan kontribusi botol plastik yang berhasil didaur ulang.
         </p>
-      </motion.section>
+      </motion.div>
 
       {/* ── SCOPE TABS ── */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.05 }}
-        className="flex gap-1.5 p-1 rounded-2xl bg-secondary/60 border border-border"
+        transition={{ duration: 0.35, delay: 0.05 }}
+        className="flex gap-1 p-1 rounded-2xl bg-secondary/60 border border-border"
       >
         {([["minggu", "Minggu ini"], ["bulan", "Bulan ini"], ["semua", "Semua"]] as const).map(([value, label]) => (
           <button
@@ -57,95 +122,100 @@ export default function LeaderboardScreen({ scope, setScope, leaderboard, onGoDa
         ))}
       </motion.div>
 
-      {/* ── TOP 3 PODIUM ── */}
-      <motion.section
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        className="flex flex-col gap-2.5"
-      >
-        {top3.map((item, index) => (
-          <div
-            key={item.rank}
-            className={cx(
-              "relative overflow-hidden flex items-center gap-3.5 p-4 rounded-2xl border transition-all",
-              index === 0
-                ? "bg-emerald-500/12 border-emerald-500/30"
-                : index === 1
-                ? "bg-card border-border"
-                : "bg-card border-border",
-            )}
-          >
-            {index === 0 && (
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-transparent pointer-events-none" />
-            )}
-            <div className={cx(
-              "w-10 h-10 rounded-2xl flex items-center justify-center text-xs font-black flex-shrink-0",
-              index === 0 ? "bg-emerald-500 text-slate-950" : "bg-secondary text-muted-foreground",
-            )}>
-              {rankMedal[item.rank] ?? `#${item.rank}`}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-bold text-foreground truncate">{item.name}</div>
-              <div className="text-xs text-muted-foreground truncate mt-0.5">{item.faculty}</div>
-            </div>
-            <div className={cx(
-              "text-base font-black flex-shrink-0",
-              index === 0 ? "text-emerald-400" : "text-foreground",
-            )}>
-              {formatPoints(item.points)}
-            </div>
-          </div>
-        ))}
-      </motion.section>
+      {leaderboard.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 py-12 text-center">
+          <Trophy className="w-10 h-10 text-muted-foreground/40" />
+          <p className="text-sm text-muted-foreground">Belum ada data leaderboard.</p>
+          <p className="text-xs text-muted-foreground">Mulai setor botol untuk masuk peringkat!</p>
+        </div>
+      ) : (
+        <>
+          {/* ── TOP 3 PODIUM ── */}
+          {top3.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.1 }}
+              className="flex items-end gap-2"
+            >
+              {podiumOrder.map((item) =>
+                item ? (
+                  <div
+                    key={item.rank}
+                    className={cx("flex-1", item.rank === 1 ? "scale-105 origin-bottom" : "")}
+                  >
+                    <PodiumCard item={item} />
+                  </div>
+                ) : null,
+              )}
+            </motion.div>
+          )}
 
-      {/* ── FULL LIST ── */}
-      <motion.section
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, delay: 0.2 }}
-        className="flex flex-col gap-2"
-      >
-        <div className="text-[0.6rem] font-black uppercase tracking-widest text-muted-foreground px-1 mb-1">Peringkat berikutnya</div>
-        {rest.map((item) => (
-          <div key={item.rank} className="flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border">
-            <div className="w-7 h-7 rounded-xl bg-secondary flex items-center justify-center text-xs font-black text-muted-foreground flex-shrink-0">
-              {item.rank}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-bold text-foreground truncate">{item.name}</div>
-              <div className="text-xs text-muted-foreground truncate mt-0.5">{item.faculty}</div>
-            </div>
-            <div className="text-sm font-black text-foreground flex-shrink-0">{formatPoints(item.points)}</div>
-          </div>
-        ))}
-      </motion.section>
+          {/* ── FULL LIST ── */}
+          {rest.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.15 }}
+              className="flex flex-col gap-1.5"
+            >
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1">Peringkat berikutnya</p>
+              {rest.map((item) => (
+                <div
+                  key={item.rank}
+                  className="flex items-center gap-3 p-3 rounded-2xl bg-secondary/50 border border-border"
+                >
+                  <span className="w-6 text-center text-xs font-bold text-muted-foreground flex-shrink-0">
+                    {item.rank}
+                  </span>
+                  <div className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
+                    <span className="text-[10px] font-bold text-muted-foreground">
+                      {item.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-foreground truncate">{item.name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{item.faculty}</p>
+                  </div>
+                  <span className="text-xs font-bold text-foreground flex-shrink-0">
+                    {formatPoints(item.points)}
+                  </span>
+                </div>
+              ))}
+            </motion.div>
+          )}
+        </>
+      )}
 
       {/* ── CTA ── */}
-      <div className="rounded-3xl bg-emerald-500/10 border border-emerald-500/20 p-5 flex flex-col gap-4">
-        <div>
-          <h2 className="text-base font-black text-foreground tracking-tight text-balance">
-            Posisimu berikutnya bisa ada di sini.
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-            Hubungkan kartu dan mulai kumpulkan poin untuk naik peringkat.
-          </p>
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.2 }}
+        className="rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-4 flex flex-col gap-3"
+      >
+        <div className="flex items-center gap-2">
+          <Medal className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+          <p className="font-bold text-sm text-foreground text-balance">Posisimu berikutnya bisa ada di sini.</p>
         </div>
-        <div className="flex flex-col gap-2">
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Hubungkan kartu dan mulai kumpulkan poin untuk naik peringkat.
+        </p>
+        <div className="flex gap-2">
           <button
             onClick={onGoDashboard}
-            className="w-full h-11 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-sm transition-all duration-150"
+            className="flex-1 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-semibold text-xs hover:bg-emerald-500/30 transition-colors"
           >
             Buka Dashboard
           </button>
           <button
             onClick={onGoPairing}
-            className="w-full h-11 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 active:scale-[0.98] text-foreground font-semibold text-sm transition-all duration-150"
+            className="flex-1 h-10 rounded-xl bg-secondary border border-border text-foreground font-semibold text-xs hover:bg-secondary/80 transition-colors"
           >
             Hubungkan Kartu
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </section>
   );
 }

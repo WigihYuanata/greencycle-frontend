@@ -1,25 +1,41 @@
-"use client";
-import { useEffect, useState } from "react";
-import { clamp } from "@/lib/gc-data";
+'use client';
 
-export function useCountUp(target: number, duration = 900) {
-  const [value, setValue] = useState(0);
+import { useEffect, useRef } from 'react';
+
+export function useCountUp(endValue: number, duration: number = 500) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const countRef = useRef(0);
+  const frameRef = useRef<number>();
 
   useEffect(() => {
-    let raf = 0;
-    const start = performance.now();
+    if (!ref.current) return;
 
-    const tick = (now: number) => {
-      const progress = clamp((now - start) / duration, 0, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(Math.round(target * eased));
-      if (progress < 1) raf = requestAnimationFrame(tick);
+    const startValue = 0;
+    const startTime = Date.now();
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      countRef.current = Math.floor(startValue + (endValue - startValue) * progress);
+      
+      if (ref.current) {
+        ref.current.textContent = countRef.current.toString();
+      }
+
+      if (progress < 1) {
+        frameRef.current = requestAnimationFrame(animate);
+      }
     };
 
-    setValue(0);
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, duration]);
+    frameRef.current = requestAnimationFrame(animate);
 
-  return value;
+    return () => {
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+      }
+    };
+  }, [endValue, duration]);
+
+  return ref;
 }

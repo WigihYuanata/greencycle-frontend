@@ -1,15 +1,13 @@
 import type { Metadata } from 'next'
-import { Inter, Geist_Mono } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
+import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 
-const _inter = Inter({ subsets: ["latin"] });
+const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'GreenCycle — Smart Recycling',
-  description: 'Ekosistem daur ulang cerdas untuk mahasiswa universitas.',
-  generator: 'v0.app',
+  title: 'GreenCycle',
+  description: 'Platform daur ulang pintar UPN Veteran Jawa Timur - Teaching Industry',
   icons: {
     icon: [
       {
@@ -35,10 +33,9 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="id" className="bg-background">
+    <html lang="en" className="bg-background">
       <body className="font-sans antialiased bg-background text-foreground">
         {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
   )

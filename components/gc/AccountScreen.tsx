@@ -1,11 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { User, Lock, Bell, Home, Zap, LogOut, Link2, TrendingUp, Eye, EyeOff } from "lucide-react";
+import { User, Lock, Bell, LogOut, Link2, TrendingUp, Eye, EyeOff, Loader2, Mail } from "lucide-react";
 import { useState } from "react";
-import {
-  AuthMode, FACULTIES, cx, digitsOnly,
-} from "@/lib/gc-data";
+import { AuthMode, FACULTIES, cx, digitsOnly } from "@/lib/gc-data";
 
 type Profile = { name: string; npm: string; faculty: string; email: string };
 type LoginForm = { npm: string; pin: string };
@@ -14,6 +12,7 @@ type ForgotForm = { npm: string; otp: string; pin: string; confirmPin: string };
 
 type Props = {
   isLoggedIn: boolean;
+  isSubmitting: boolean;
   authMode: AuthMode;
   setAuthMode: React.Dispatch<React.SetStateAction<AuthMode>>;
   profile: Profile;
@@ -34,25 +33,32 @@ type Props = {
 };
 
 function Field({
-  label, value, onChange, placeholder, icon, password, select, options,
+  label, value, onChange, placeholder, icon, password, select, options, disabled,
 }: {
-  label: string; value: string; onChange: (v: string) => void;
-  placeholder?: string; icon?: React.ReactNode; password?: boolean;
-  select?: boolean; options?: string[];
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  icon?: React.ReactNode;
+  password?: boolean;
+  select?: boolean;
+  options?: string[];
+  disabled?: boolean;
 }) {
   const [show, setShow] = useState(false);
   return (
-    <label className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
+    <div className="flex flex-col gap-1.5">
+      <label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
         {icon}
         {label}
-      </div>
+      </label>
       <div className="relative">
         {select ? (
           <select
-            className="w-full h-11 pl-4 pr-10 rounded-xl bg-secondary border border-border text-sm text-foreground font-medium appearance-none focus:outline-none focus:border-emerald-500/50 transition-colors"
             value={value}
             onChange={(e) => onChange(e.target.value)}
+            disabled={disabled}
+            className="w-full h-11 rounded-2xl bg-secondary border border-border px-3 text-sm text-foreground focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition-all appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <option value="">Pilih salah satu</option>
             {(options ?? []).map((opt) => (
@@ -61,123 +67,132 @@ function Field({
           </select>
         ) : (
           <input
-            className="w-full h-11 pl-4 pr-10 rounded-xl bg-secondary border border-border text-sm text-foreground font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:border-emerald-500/50 transition-colors"
             type={password && !show ? "password" : "text"}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
+            disabled={disabled}
             inputMode={password ? "numeric" : "text"}
+            className="w-full h-11 rounded-2xl bg-secondary border border-border px-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           />
         )}
         {password && (
           <button
             type="button"
             onClick={() => setShow((s) => !s)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
             aria-label={show ? "Sembunyikan PIN" : "Tampilkan PIN"}
           >
             {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
         )}
       </div>
-    </label>
+    </div>
   );
 }
 
 export default function AccountScreen({
-  isLoggedIn, authMode, setAuthMode,
+  isLoggedIn, isSubmitting, authMode, setAuthMode,
   profile, loginForm, setLoginForm, registerForm, setRegisterForm,
   forgotStep, setForgotStep, forgotForm, setForgotForm,
   onLogin, onRegister, onForgot, onLogout, onGoDashboard, onGoPairing,
 }: Props) {
-  const initials = profile.name.split(" ").map((p) => p[0]).slice(0, 2).join("");
+  const initials = profile.name
+    ? profile.name.split(" ").map((p) => p[0]).slice(0, 2).join("")
+    : "GC";
 
   if (isLoggedIn) {
     return (
-      <div className="flex flex-col gap-6 pt-2 pb-4">
-        <motion.section
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-        >
-          <div className="text-[0.65rem] font-black uppercase tracking-widest text-emerald-400 mb-1">Akun mahasiswa</div>
-          <h2 className="text-2xl font-black tracking-tight text-foreground leading-none">Akun kamu</h2>
-          <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-            Semua data penting disusun ringkas agar nyaman diakses dari HP.
+      <motion.section
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="px-4 pt-5 flex flex-col gap-6"
+        aria-label="Akun mahasiswa"
+      >
+        <div>
+          <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Profil</p>
+          <h1 className="text-xl font-bold text-foreground mt-0.5">Akun kamu</h1>
+          <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+            Semua data penting disusun ringkas agar nyaman diakses.
           </p>
-        </motion.section>
+        </div>
 
         {/* profile card */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.07 }}
-          className="relative overflow-hidden rounded-3xl bg-emerald-500/10 border border-emerald-500/25 p-5 flex items-center gap-4"
-        >
-          <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-emerald-500/15 blur-2xl pointer-events-none" />
-          <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-lg font-black text-emerald-400 flex-shrink-0 z-10">
+        <div className="flex items-center gap-4 p-4 rounded-2xl bg-secondary/50 border border-border">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-lg flex-shrink-0">
             {initials}
           </div>
-          <div className="min-w-0 z-10">
-            <div className="text-base font-black text-foreground truncate">{profile.name}</div>
-            <div className="text-xs text-muted-foreground mt-0.5 truncate">{profile.npm} · {profile.faculty}</div>
-            <div className="text-xs text-muted-foreground mt-0.5 truncate">{profile.email}</div>
+          <div className="min-w-0">
+            <p className="font-bold text-base text-foreground truncate">{profile.name}</p>
+            <p className="text-sm text-muted-foreground truncate">{profile.npm}</p>
+            <p className="text-xs text-muted-foreground truncate">{profile.faculty}</p>
+            <p className="text-xs text-muted-foreground truncate">{profile.email}</p>
           </div>
-        </motion.div>
+        </div>
 
         {/* account actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.14 }}
-          className="flex flex-col gap-2"
-        >
+        <div className="flex flex-col gap-2">
           {[
-            { icon: Link2, label: "Hubungkan Kartu", sub: "Pairing satu kali ke Smart BIN terdekat", action: onGoPairing, accent: true },
-            { icon: TrendingUp, label: "Buka Dashboard", sub: "Saldo aktif, tren, dan aktivitas", action: onGoDashboard, accent: false },
-            { icon: LogOut, label: "Keluar", sub: "Amankan sesi jika sudah selesai", action: onLogout, accent: false },
+            {
+              icon: Link2, label: "Hubungkan Kartu",
+              sub: "Pairing satu kali ke Smart BIN terdekat",
+              action: onGoPairing, accent: true,
+            },
+            {
+              icon: TrendingUp, label: "Buka Dashboard",
+              sub: "Saldo aktif, tren, dan aktivitas",
+              action: onGoDashboard, accent: false,
+            },
+            {
+              icon: LogOut, label: "Keluar",
+              sub: "Amankan sesi jika sudah selesai",
+              action: onLogout, accent: false,
+            },
           ].map(({ icon: Icon, label, sub, action, accent }) => (
             <button
               key={label}
               onClick={action}
               className={cx(
-                "flex items-center gap-3.5 p-3.5 rounded-2xl border text-left active:scale-[0.99] transition-all duration-150",
+                "flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all duration-150 active:scale-[0.99]",
                 accent
-                  ? "bg-emerald-500/10 border-emerald-500/25 hover:bg-emerald-500/15"
-                  : "bg-card border-border hover:border-emerald-500/30 hover:bg-emerald-500/5",
+                  ? "bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/15"
+                  : "bg-secondary/50 border-border hover:bg-secondary",
               )}
             >
               <div className={cx(
                 "w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0",
-                accent ? "bg-emerald-500/20 text-emerald-400" : "bg-secondary text-muted-foreground",
+                accent ? "bg-emerald-500/20" : "bg-secondary",
               )}>
-                <Icon className="w-4.5 h-4.5" />
+                <Icon className={cx("w-4 h-4", accent ? "text-emerald-400" : "text-muted-foreground")} />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-bold text-foreground">{label}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">{sub}</div>
+              <div className="min-w-0">
+                <p className="font-semibold text-sm text-foreground">{label}</p>
+                <p className="text-xs text-muted-foreground truncate">{sub}</p>
               </div>
             </button>
           ))}
-        </motion.div>
-      </div>
+        </div>
+      </motion.section>
     );
   }
 
   // ── AUTH FORMS ──
   return (
-    <div className="flex flex-col gap-6 pt-2 pb-4">
-      <motion.section
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
-      >
-        <div className="text-[0.65rem] font-black uppercase tracking-widest text-emerald-400 mb-1">Autentikasi</div>
-        <h2 className="text-2xl font-black tracking-tight text-foreground leading-none">Masuk atau daftar</h2>
-        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-          Flow dibuat singkat, jelas, dan ramah untuk browser HP.
+    <motion.section
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+      className="px-4 pt-5 flex flex-col gap-6"
+      aria-label="Autentikasi"
+    >
+      <div>
+        <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Autentikasi</p>
+        <h1 className="text-xl font-bold text-foreground mt-0.5">Masuk atau daftar</h1>
+        <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+          Flow dibuat singkat, jelas, dan ramah untuk semua ukuran layar.
         </p>
-      </motion.section>
+      </div>
 
       {/* auth tabs */}
       <div className="flex gap-1 p-1 rounded-2xl bg-secondary/60 border border-border">
@@ -199,82 +214,78 @@ export default function AccountScreen({
 
       {/* LOGIN */}
       {authMode === "login" && (
-        <motion.div
-          key="login"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.28 }}
-          className="flex flex-col gap-4 p-5 rounded-3xl bg-card border border-border"
-        >
+        <div className="flex flex-col gap-3">
           <Field
             label="NPM"
             value={loginForm.npm}
             onChange={(v) => setLoginForm((p) => ({ ...p, npm: digitsOnly(v, 20) }))}
             placeholder="Masukkan NPM"
             icon={<User className="w-3.5 h-3.5" />}
+            disabled={isSubmitting}
           />
           <Field
-            label="PIN 6 digit"
+            label="PIN"
             value={loginForm.pin}
             onChange={(v) => setLoginForm((p) => ({ ...p, pin: digitsOnly(v, 6) }))}
             placeholder="Masukkan PIN"
             icon={<Lock className="w-3.5 h-3.5" />}
             password
+            disabled={isSubmitting}
           />
           <button
             onClick={onLogin}
-            className="w-full h-12 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-sm transition-all duration-150 shadow-lg shadow-emerald-500/20"
+            disabled={isSubmitting}
+            className="w-full h-12 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-sm transition-all duration-150 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed mt-1"
           >
-            Masuk
+            {isSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" />Memproses...</> : "Masuk"}
           </button>
-        </motion.div>
+        </div>
       )}
 
       {/* REGISTER */}
       {authMode === "register" && (
-        <motion.div
-          key="register"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.28 }}
-          className="flex flex-col gap-4 p-5 rounded-3xl bg-card border border-border"
-        >
+        <div className="flex flex-col gap-3">
           <Field
             label="NPM"
             value={registerForm.npm}
             onChange={(v) => setRegisterForm((p) => ({ ...p, npm: digitsOnly(v, 20) }))}
             placeholder="Masukkan NPM"
             icon={<User className="w-3.5 h-3.5" />}
+            disabled={isSubmitting}
           />
           <Field
             label="Nama lengkap"
             value={registerForm.name}
             onChange={(v) => setRegisterForm((p) => ({ ...p, name: v }))}
             placeholder="Masukkan nama kamu"
-            icon={<Zap className="w-3.5 h-3.5" />}
+            icon={<User className="w-3.5 h-3.5" />}
+            disabled={isSubmitting}
           />
           <Field
             label="Fakultas"
             value={registerForm.faculty}
             onChange={(v) => setRegisterForm((p) => ({ ...p, faculty: v }))}
+            icon={<Bell className="w-3.5 h-3.5" />}
             select
             options={FACULTIES}
-            icon={<Home className="w-3.5 h-3.5" />}
+            disabled={isSubmitting}
           />
           <Field
             label="Email kampus"
             value={registerForm.email}
             onChange={(v) => setRegisterForm((p) => ({ ...p, email: v }))}
             placeholder="contoh@student.upnjatim.ac.id"
-            icon={<Bell className="w-3.5 h-3.5" />}
+            icon={<Mail className="w-3.5 h-3.5" />}
+            disabled={isSubmitting}
           />
           <Field
-            label="PIN 6 digit"
+            label="PIN (6 digit)"
             value={registerForm.pin}
             onChange={(v) => setRegisterForm((p) => ({ ...p, pin: digitsOnly(v, 6) }))}
             placeholder="Buat PIN"
             icon={<Lock className="w-3.5 h-3.5" />}
             password
+            disabled={isSubmitting}
           />
           <Field
             label="Konfirmasi PIN"
@@ -283,29 +294,25 @@ export default function AccountScreen({
             placeholder="Ulangi PIN"
             icon={<Lock className="w-3.5 h-3.5" />}
             password
+            disabled={isSubmitting}
           />
           <button
             onClick={onRegister}
-            className="w-full h-12 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-sm transition-all duration-150 shadow-lg shadow-emerald-500/20"
+            disabled={isSubmitting}
+            className="w-full h-12 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-sm transition-all duration-150 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed mt-1"
           >
-            Daftar Sekarang
+            {isSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" />Memproses...</> : "Daftar Sekarang"}
           </button>
-        </motion.div>
+        </div>
       )}
 
       {/* FORGOT */}
       {authMode === "forgot" && (
-        <motion.div
-          key="forgot"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.28 }}
-          className="flex flex-col gap-4 p-5 rounded-3xl bg-card border border-border"
-        >
+        <div className="flex flex-col gap-3">
           {/* step indicator */}
-          <div className="flex items-center gap-2">
-            <div className={cx("flex-1 h-1 rounded-full transition-all", forgotStep >= 1 ? "bg-emerald-500" : "bg-secondary")} />
-            <div className={cx("flex-1 h-1 rounded-full transition-all", forgotStep >= 2 ? "bg-emerald-500" : "bg-secondary")} />
+          <div className="flex gap-1.5 mb-1">
+            <div className={cx("h-1 flex-1 rounded-full transition-colors", forgotStep >= 1 ? "bg-emerald-500" : "bg-secondary")} />
+            <div className={cx("h-1 flex-1 rounded-full transition-colors", forgotStep >= 2 ? "bg-emerald-500" : "bg-secondary")} />
           </div>
 
           {forgotStep === 1 ? (
@@ -316,22 +323,25 @@ export default function AccountScreen({
                 onChange={(v) => setForgotForm((p) => ({ ...p, npm: digitsOnly(v, 20) }))}
                 placeholder="Masukkan NPM"
                 icon={<User className="w-3.5 h-3.5" />}
+                disabled={isSubmitting}
               />
               <button
                 onClick={onForgot}
-                className="w-full h-12 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-sm transition-all duration-150"
+                disabled={isSubmitting}
+                className="w-full h-12 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-sm transition-all duration-150 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                Lanjut verifikasi
+                {isSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" />Mengirim...</> : "Lanjut verifikasi"}
               </button>
             </>
           ) : (
             <>
               <Field
-                label="OTP 6 digit"
+                label="Kode OTP (dari email kampus)"
                 value={forgotForm.otp}
                 onChange={(v) => setForgotForm((p) => ({ ...p, otp: digitsOnly(v, 6) }))}
-                placeholder="Masukkan OTP"
-                icon={<Bell className="w-3.5 h-3.5" />}
+                placeholder="Masukkan OTP 6 digit"
+                icon={<Mail className="w-3.5 h-3.5" />}
+                disabled={isSubmitting}
               />
               <Field
                 label="PIN baru"
@@ -340,6 +350,7 @@ export default function AccountScreen({
                 placeholder="Buat PIN baru"
                 icon={<Lock className="w-3.5 h-3.5" />}
                 password
+                disabled={isSubmitting}
               />
               <Field
                 label="Konfirmasi PIN baru"
@@ -348,49 +359,48 @@ export default function AccountScreen({
                 placeholder="Ulangi PIN baru"
                 icon={<Lock className="w-3.5 h-3.5" />}
                 password
+                disabled={isSubmitting}
               />
               <button
                 onClick={onForgot}
-                className="w-full h-12 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-sm transition-all duration-150"
+                disabled={isSubmitting}
+                className="w-full h-12 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-sm transition-all duration-150 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                Simpan PIN baru
+                {isSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" />Menyimpan...</> : "Simpan PIN baru"}
               </button>
               <button
                 onClick={() => setForgotStep(1)}
-                className="w-full h-11 rounded-2xl bg-secondary border border-border hover:bg-secondary/80 active:scale-[0.98] text-foreground font-semibold text-sm transition-all duration-150"
+                disabled={isSubmitting}
+                className="w-full h-11 rounded-2xl bg-secondary border border-border hover:bg-secondary/80 active:scale-[0.98] text-foreground font-semibold text-sm transition-all duration-150 disabled:opacity-50"
               >
                 Kembali ke langkah awal
               </button>
             </>
           )}
-        </motion.div>
+        </div>
       )}
 
       {/* CTA */}
-      <div className="rounded-3xl bg-emerald-500/10 border border-emerald-500/20 p-5 flex flex-col gap-4">
-        <div>
-          <h2 className="text-base font-black text-foreground tracking-tight text-balance">
-            Siap dibuat terhubung ke Smart BIN?
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-            Setelah masuk, pairing dan transaksi jadi jauh lebih cepat.
-          </p>
-        </div>
-        <div className="flex flex-col gap-2">
+      <div className="rounded-2xl bg-secondary/60 border border-border p-4 flex flex-col gap-3">
+        <p className="font-bold text-sm text-foreground text-balance">Siap dibuat terhubung ke Smart BIN?</p>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Setelah masuk, pairing dan transaksi jadi jauh lebih cepat.
+        </p>
+        <div className="flex gap-2">
           <button
             onClick={onGoPairing}
-            className="w-full h-11 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-sm transition-all duration-150"
+            className="flex-1 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 font-semibold text-xs hover:bg-emerald-500/20 transition-colors"
           >
             Hubungkan Kartu
           </button>
           <button
             onClick={onGoDashboard}
-            className="w-full h-11 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 active:scale-[0.98] text-foreground font-semibold text-sm transition-all duration-150"
+            className="flex-1 h-10 rounded-xl bg-secondary border border-border text-foreground font-semibold text-xs hover:bg-secondary/80 transition-colors"
           >
             Lihat Dashboard
           </button>
         </div>
       </div>
-    </div>
+    </motion.section>
   );
 }
