@@ -6,8 +6,7 @@ import { Bell } from "lucide-react";
 import useSWR from "swr";
 
 import {
-  Screen, AuthMode, Machine, Toast, ToastTone, PairingSession,
-  Leader,
+  Screen, AuthMode, Machine, Toast, ToastTone,
   MACHINES,
   cx, formatCompact, isSixDigitPin, isValidNpm, isValidCampusEmail,
   computeImpact, formatLitres, formatCO2,
@@ -24,7 +23,6 @@ import HomeScreen from "@/components/gc/HomeScreen";
 import DashboardScreen from "@/components/gc/DashboardScreen";
 import LeaderboardScreen from "@/components/gc/LeaderboardScreen";
 import AccountScreen from "@/components/gc/AccountScreen";
-import PairingSheet from "@/components/gc/PairingSheet";
 import RedeemSheet from "@/components/gc/RedeemSheet";
 import BottomNav from "@/components/gc/BottomNav";
 import ToastBanner from "@/components/gc/ToastBanner";
@@ -59,7 +57,6 @@ export default function GreenCycleApp() {
   const [token, setToken] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
-  const [now, setNow] = useState(Date.now());
 
   // Profile / balances / bottles — populated from /dashboard/
   const [profile, setProfile] = useState({
@@ -75,10 +72,7 @@ export default function GreenCycleApp() {
   const [heroFocus, setHeroFocus] = useState(0);
   const [leaderScope, setLeaderScope] = useState<"minggu" | "bulan" | "semua">("minggu");
 
-  const [pairingSession, setPairingSession] = useState<PairingSession | null>(null);
-  const [pairingPreviewMachine, setPairingPreviewMachine] = useState<string | null>(null);
   const [redeemOpen, setRedeemOpen] = useState(false);
-  const [pairingOpen, setPairingOpen] = useState(false);
   const [activeMachineId, setActiveMachineId] = useState<string | null>(null);
 
   const [loginForm, setLoginForm] = useState({ npm: "", pin: "" });
@@ -134,14 +128,9 @@ export default function GreenCycleApp() {
     onError: (err) => emitToast(err.message, "warning"),
   });
 
-  const leaderboard: Leader[] = useMemo(() => {
+  const leaderboard: LeaderEntry[] = useMemo(() => {
     if (!leaderboardData) return [];
-    return leaderboardData.Top_10_GreenCycle.map((e: LeaderEntry) => ({
-      rank: e.peringkat,
-      name: e.nama,
-      faculty: e.fakultas,
-      points: e.total_point,
-    }));
+    return leaderboardData.Top_10_GreenCycle;
   }, [leaderboardData]);
 
   // ── SWR: vouchers (public) ──
@@ -171,10 +160,6 @@ export default function GreenCycleApp() {
     [machines, activeMachineId],
   );
 
-  const pairingRemaining = pairingSession
-    ? Math.max(0, Math.ceil((pairingSession.expiresAt - now) / 1000))
-    : 0;
-
   const activeCount = machines.filter((m) => m.status === "active" || m.status === "connected").length;
   const connectedCount = machines.filter((m) => m.status === "connected").length;
 
@@ -183,27 +168,6 @@ export default function GreenCycleApp() {
     const interval = window.setInterval(() => setHeroFocus((p) => (p + 1) % 3), 4600);
     return () => window.clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    if (!pairingSession) return;
-    const interval = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(interval);
-  }, [pairingSession]);
-
-  useEffect(() => {
-    if (!pairingSession) return;
-    if (pairingRemaining > 0 || pairingSession.stage === "success") return;
-    setMachines((prev) =>
-      prev.map((m) =>
-        m.id === pairingSession.machineId && m.status === "pairing"
-          ? { ...m, status: "active", owner: undefined }
-          : m,
-      ),
-    );
-    setPairingSession(null);
-    setPairingOpen(false);
-    setToast({ text: "Sesi pairing habis. Coba lagi dari dashboard.", tone: "warning" });
-  }, [pairingRemaining, pairingSession]);
 
   useEffect(() => {
     if (!toast) return;
@@ -217,46 +181,6 @@ export default function GreenCycleApp() {
     (text: string, tone: ToastTone = "success") => setToast({ text, tone }),
     [],
   );
-
-  const openPairing = (machineId?: string) => {
-    if (!isLoggedIn) {
-      emitToast("Masuk dulu untuk menghubungkan kartu.", "info");
-      setScreen("account");
-      setAuthMode("login");
-      return;
-    }
-    setPairingPreviewMachine(machineId ?? null);
-    setPairingOpen(true);
-  };
-
-  const beginPairingLock = (machineId: string) => {
-    if (pairingSession?.stage === "waiting") {
-      emitToast("Masih ada sesi pairing aktif. Selesaikan dulu sesi sebelumnya.", "warning");
-      return;
-    }
-    setMachines((prev) =>
-      prev.map((m) => m.id === machineId ? { ...m, status: "pairing", owner: profile.name } : m),
-    );
-    setPairingSession({ machineId, expiresAt: Date.now() + 60000, stage: "waiting" });
-    setPairingPreviewMachine(machineId);
-    emitToast(`Pairing terkunci untuk ${machineId}. Tempelkan KTM dalam 60 detik.`, "success");
-  };
-
-  const tapCardToPair = () => {
-    if (!pairingSession || pairingSession.stage !== "waiting") return;
-    const machineId = pairingSession.machineId;
-    setPairingSession({ ...pairingSession, stage: "success" });
-    setMachines((prev) =>
-      prev.map((m) => m.id === machineId ? { ...m, status: "connected", owner: profile.name } : m),
-    );
-    setActiveMachineId(machineId);
-    setTimeout(() => {
-      setPairingSession(null);
-      setPairingOpen(false);
-      setPairingPreviewMachine(null);
-      emitToast("KTM Berhasil Terhubung! Anda siap mendaur ulang.", "success");
-    }, 1800);
-  };
 
   // ── Auth handlers (real API) ──
   const handleLogin = async () => {
@@ -508,10 +432,8 @@ export default function GreenCycleApp() {
                     leaderboard={leaderboard}
                     leaderboardLoading={leaderboardLoading}
                     onGoDashboard={() => setScreen("dashboard")}
-                    onGoPairing={() => openPairing(pairingPreviewMachine ?? currentHeroMachine?.id)}
                     onGoLeaderboard={() => setScreen("leaderboard")}
                     onGoAccount={() => setScreen("account")}
-                    onMachineSelect={(id) => { setPairingPreviewMachine(id); openPairing(id); }}
                   />
                 </motion.div>
               )}
@@ -525,7 +447,6 @@ export default function GreenCycleApp() {
                     machines={machines}
                     activities={recentActivities}
                     isLoading={dashboardLoading}
-                    onOpenPairing={() => openPairing(activeMachineId ?? machines[0].id)}
                     onOpenRedeem={() => {
                       if (!isLoggedIn) { emitToast("Masuk dulu untuk melakukan penarikan.", "info"); setScreen("account"); setAuthMode("login"); return; }
                       setRedeemOpen(true);
@@ -543,7 +464,6 @@ export default function GreenCycleApp() {
                     leaderboard={leaderboard}
                     isLoading={leaderboardLoading}
                     onGoDashboard={() => setScreen("dashboard")}
-                    onGoPairing={() => openPairing(activeMachineId ?? machines[0].id)}
                   />
                 </motion.div>
               )}
@@ -577,7 +497,6 @@ export default function GreenCycleApp() {
                       emitToast("Berhasil keluar dari akun.", "info");
                     }}
                     onGoDashboard={() => setScreen("dashboard")}
-                    onGoPairing={() => openPairing(activeMachineId ?? machines[0].id)}
                   />
                 </motion.div>
               )}
@@ -591,26 +510,9 @@ export default function GreenCycleApp() {
         active={screen}
         onGoHome={() => setScreen("home")}
         onGoDashboard={() => setScreen("dashboard")}
-        onOpenPairing={() => openPairing(activeMachineId ?? machines[0].id)}
         onGoLeaderboard={() => setScreen("leaderboard")}
         onGoAccount={() => setScreen("account")}
       />
-
-      {/* PAIRING SHEET */}
-      <AnimatePresence>
-        {pairingOpen && (
-          <PairingSheet
-            isLoggedIn={isLoggedIn}
-            selectedMachine={machines.find((m) => m.id === pairingPreviewMachine) ?? null}
-            machines={machines}
-            pairingSession={pairingSession}
-            remaining={pairingRemaining}
-            onClose={() => { setPairingOpen(false); setPairingPreviewMachine(null); }}
-            onPickMachine={beginPairingLock}
-            onTapCard={tapCardToPair}
-          />
-        )}
-      </AnimatePresence>
 
       {/* REDEEM SHEET */}
       <AnimatePresence>

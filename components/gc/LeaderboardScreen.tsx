@@ -3,17 +3,17 @@
 import { motion } from "framer-motion";
 import { Trophy, Medal } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cx, formatPoints, Leader } from "@/lib/gc-data";
+import { cx, formatPoints } from "@/lib/gc-data";
+import { LeaderEntry } from "@/lib/gc-api";
 
 type Scope = "minggu" | "bulan" | "semua";
 
 type Props = {
   scope: Scope;
   setScope: React.Dispatch<React.SetStateAction<Scope>>;
-  leaderboard: Leader[];
+  leaderboard: LeaderEntry[];
   isLoading: boolean;
   onGoDashboard: () => void;
-  onGoPairing: () => void;
 };
 
 const RANK_COLORS: Record<number, { bg: string; text: string; medal: string }> = {
@@ -22,15 +22,15 @@ const RANK_COLORS: Record<number, { bg: string; text: string; medal: string }> =
   3: { bg: "bg-amber-700/10 border-amber-700/20", text: "text-amber-600", medal: "text-amber-600" },
 };
 
-function PodiumCard({ item }: { item: Leader }) {
-  const colors = RANK_COLORS[item.rank];
-  const initials = item.name.split(" ").map((p) => p[0]).slice(0, 2).join("");
+function PodiumCard({ item }: { item: LeaderEntry }) {
+  const colors = RANK_COLORS[item.peringkat];
+  const initials = item.nama.split(" ").map((p) => p[0]).slice(0, 2).join("");
   return (
     <div className={cx(
       "flex flex-col items-center gap-2 p-3 rounded-2xl border flex-1",
       colors?.bg ?? "bg-secondary/50 border-border",
     )}>
-      {item.rank === 1 && <Trophy className="w-4 h-4 text-amber-400" />}
+      {item.peringkat === 1 && <Trophy className="w-4 h-4 text-amber-400" />}
       <div className={cx(
         "w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm",
         colors?.bg ?? "bg-secondary",
@@ -40,18 +40,18 @@ function PodiumCard({ item }: { item: Leader }) {
         </span>
       </div>
       <div className="text-center">
-        <p className="text-xs font-bold text-foreground text-balance leading-tight">{item.name}</p>
-        <p className="text-[9px] text-muted-foreground mt-0.5 line-clamp-1">{item.faculty}</p>
+        <p className="text-xs font-bold text-foreground text-balance leading-tight">{item.nama}</p>
+        <p className="text-[9px] text-muted-foreground mt-0.5 line-clamp-1">{item.fakultas}</p>
       </div>
       <span className={cx("text-sm font-bold", colors?.text ?? "text-foreground")}>
-        {formatPoints(item.points)}
+        {formatPoints(item.total_point)}
       </span>
       <span className={cx(
         "text-[10px] font-bold px-2 py-0.5 rounded-full",
         colors?.bg ?? "bg-secondary",
         colors?.text ?? "text-muted-foreground",
       )}>
-        #{item.rank}
+        #{item.peringkat}
       </span>
     </div>
   );
@@ -78,7 +78,7 @@ function LoadingLeaderboard() {
   );
 }
 
-export default function LeaderboardScreen({ scope, setScope, leaderboard, isLoading, onGoDashboard, onGoPairing }: Props) {
+export default function LeaderboardScreen({ scope, setScope, leaderboard, isLoading, onGoDashboard }: Props) {
   if (isLoading) return <LoadingLeaderboard />;
 
   const top3 = leaderboard.slice(0, 3);
@@ -141,8 +141,8 @@ export default function LeaderboardScreen({ scope, setScope, leaderboard, isLoad
               {podiumOrder.map((item) =>
                 item ? (
                   <div
-                    key={item.rank}
-                    className={cx("flex-1", item.rank === 1 ? "scale-105 origin-bottom" : "")}
+                    key={item.peringkat}
+                    className={cx("flex-1", item.peringkat === 1 ? "scale-105 origin-bottom" : "")}
                   >
                     <PodiumCard item={item} />
                   </div>
@@ -162,23 +162,23 @@ export default function LeaderboardScreen({ scope, setScope, leaderboard, isLoad
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1">Peringkat berikutnya</p>
               {rest.map((item) => (
                 <div
-                  key={item.rank}
+                  key={item.peringkat}
                   className="flex items-center gap-3 p-3 rounded-2xl bg-secondary/50 border border-border"
                 >
                   <span className="w-6 text-center text-xs font-bold text-muted-foreground flex-shrink-0">
-                    {item.rank}
+                    {item.peringkat}
                   </span>
                   <div className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
                     <span className="text-[10px] font-bold text-muted-foreground">
-                      {item.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
+                      {item.nama.split(" ").map((p) => p[0]).slice(0, 2).join("")}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-foreground truncate">{item.name}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{item.faculty}</p>
+                    <p className="text-xs font-semibold text-foreground truncate">{item.nama}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{item.fakultas}</p>
                   </div>
                   <span className="text-xs font-bold text-foreground flex-shrink-0">
-                    {formatPoints(item.points)}
+                    {formatPoints(item.total_point)}
                   </span>
                 </div>
               ))}
@@ -199,22 +199,14 @@ export default function LeaderboardScreen({ scope, setScope, leaderboard, isLoad
           <p className="font-bold text-sm text-foreground text-balance">Posisimu berikutnya bisa ada di sini.</p>
         </div>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Hubungkan kartu dan mulai kumpulkan poin untuk naik peringkat.
+          Mulai kumpulkan poin dengan mendaur ulang botol di Smart BIN untuk naik peringkat.
         </p>
-        <div className="flex gap-2">
-          <button
-            onClick={onGoDashboard}
-            className="flex-1 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-semibold text-xs hover:bg-emerald-500/30 transition-colors"
-          >
-            Buka Dashboard
-          </button>
-          <button
-            onClick={onGoPairing}
-            className="flex-1 h-10 rounded-xl bg-secondary border border-border text-foreground font-semibold text-xs hover:bg-secondary/80 transition-colors"
-          >
-            Hubungkan Kartu
-          </button>
-        </div>
+        <button
+          onClick={onGoDashboard}
+          className="w-full h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-semibold text-xs hover:bg-emerald-500/30 transition-colors"
+        >
+          Buka Dashboard
+        </button>
       </motion.div>
     </section>
   );

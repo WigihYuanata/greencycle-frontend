@@ -17,7 +17,6 @@ type Props = {
   heroBotol: number;
   heroMembers: number;
   heroPoints: number;
-  liveFacts: Array<{ label: string; value: string }>;
   heroFocusLabel: string;
   heroFocusValue: string;
   currentMachine: Machine | undefined;
@@ -30,10 +29,8 @@ type Props = {
   leaderboard: Leader[];
   leaderboardLoading: boolean;
   onGoDashboard: () => void;
-  onGoPairing: () => void;
   onGoLeaderboard: () => void;
   onGoAccount: () => void;
-  onMachineSelect: (machineId: string) => void;
 };
 
 function StatusDot({ status }: { status: Machine["status"] }) {
@@ -52,7 +49,7 @@ export default function HomeScreen({
   heroFocusLabel, heroFocusValue,
   currentMachine, connectedCount, activeCount,
   machines, activities, impactCards, liveStrip, leaderboard, leaderboardLoading,
-  onGoDashboard, onGoPairing, onGoLeaderboard, onGoAccount, onMachineSelect,
+  onGoDashboard, onGoLeaderboard, onGoAccount,
 }: Props) {
   const topThree = leaderboard.slice(0, 3);
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -160,16 +157,15 @@ export default function HomeScreen({
           <div>
             <p className="font-bold text-xs md:text-sm text-foreground">Smart BIN tersedia</p>
             <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">
-              Pilih mesin terdekat untuk memulai pairing.
+              Lokasi Smart BIN yang tersedia di kampus.
             </p>
           </div>
         </div>
         <div className="flex flex-col gap-1.5">
           {machines.map((machine) => (
-            <button
+            <div
               key={machine.id}
-              onClick={() => onMachineSelect(machine.id)}
-              className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-card border border-border hover:border-emerald-500/40 hover:bg-emerald-500/5 active:scale-[0.99] transition-all duration-150 text-left"
+              className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-card border border-border text-left"
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <StatusDot status={machine.status} />
@@ -185,9 +181,8 @@ export default function HomeScreen({
                 )}>
                   {machine.status === "active" ? "Siap" : machine.status === "pairing" ? "Sibuk" : "Terhubung"}
                 </span>
-                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
               </div>
-            </button>
+            </div>
           ))}
         </div>
       </section>
@@ -345,20 +340,20 @@ export default function HomeScreen({
         <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 text-emerald-400" />
         <p className="font-bold text-sm md:text-base text-foreground text-balance">Mulai dari browser, tanpa install apapun.</p>
         <p className="text-[10px] md:text-xs text-muted-foreground leading-relaxed">
-          Buka akun, hubungkan KTM ke Smart BIN, pantau poin dan tukar hadiah langsung di sini.
+          Buka akun, datangi Smart BIN terdekat, tap KTM-mu dan mulai berkontribusi.
         </p>
         <div className="flex gap-2">
           <button
             onClick={onGoAccount}
             className="flex-1 h-10 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-xs transition-all"
           >
-            Masuk
+            Masuk / Daftar
           </button>
           <button
-            onClick={onGoPairing}
+            onClick={onGoDashboard}
             className="flex-1 h-10 rounded-xl bg-secondary border border-border hover:bg-secondary/80 text-foreground font-bold text-xs transition-all"
           >
-            Hubungkan Kartu
+            Lihat Dashboard
           </button>
         </div>
       </section>

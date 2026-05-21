@@ -19,7 +19,6 @@ export type Activity = {
   kind: "green" | "mint" | "slate";
 };
 
-/** Frontend leaderboard entry — mapped from the backend LeaderEntry schema */
 export type Leader = {
   rank: number;
   name: string;
@@ -44,13 +43,13 @@ export const FACULTIES = [
 ];
 
 export const MACHINES: Machine[] = [
-  { id: "BIN-FT-01", label: "Smart BIN Teknik", area: "Fakultas Teknik", status: "active" },
+  { id: "BIN-FT-01", label: "Smart BIN FTS", area: "Fakultas Teknik dan Sains", status: "active" },
   { id: "BIN-FEB-01", label: "Smart BIN FEB", area: "Fakultas Ekonomi dan Bisnis", status: "active" },
-  { id: "BIN-FISIP-01", label: "Smart BIN FISIP", area: "Fakultas Ilmu Sosial dan Ilmu Politik", status: "active" },
-  { id: "BIN-FH-01", label: "Smart BIN Hukum", area: "Fakultas Hukum", status: "active" },
-  { id: "BIN-FIKOM-01", label: "Smart BIN Ilkom", area: "Fakultas Ilmu Komputer", status: "active" },
-  { id: "BIN-FAPERTA-01", label: "Smart BIN Pertanian", area: "Fakultas Pertanian", status: "active" },
-  { id: "BIN-FAD-01", label: "Smart BIN Desain", area: "Fakultas Arsitektur dan Desain", status: "active" },
+  { id: "BIN-FISIP-01", label: "Smart BIN FK/FISIP", area: "Twin Tower UPNVJT", status: "active" },
+  { id: "BIN-FH-01", label: "Smart BIN FH", area: "Fakultas Hukum", status: "active" },
+  { id: "BIN-FIKOM-01", label: "Smart BIN FIK", area: "Fakultas Ilmu Komputer", status: "active" },
+  { id: "BIN-FAPERTA-01", label: "Smart BIN FP", area: "Fakultas Pertanian", status: "active" },
+  { id: "BIN-FAD-01", label: "Smart BIN FAD", area: "Fakultas Arsitektur dan Desain", status: "active" },
 ];
 
 export const HOME_QUESTIONS = [
@@ -63,8 +62,8 @@ export const HOME_QUESTIONS = [
     a: "Ya. Setelah botol berhasil diproses, poin muncul di dashboard dan riwayat transaksi.",
   },
   {
-    q: "Apakah saldo bisa ditarik?",
-    a: "Bisa. Penarikan saldo digital tersedia dari dashboard dengan konfirmasi PIN 6 digit.",
+    q: "Apakah poin bisa ditukar reward ?",
+    a: "Bisa. Penukaran reward tersedia dari dashboard dengan konfirmasi PIN 6 digit.",
   },
 ];
 
@@ -104,24 +103,6 @@ export function formatCompact(value: number) {
   }).format(value);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Environmental impact constants (scientific sources)
-//
-// Source 1 — NIH / Gironi & Piemonte (2010), Env. Progress & Sustainable Energy
-//   → 0.0114 kg CO2-eq PREVENTED per 500 mL PET bottle recycled
-//     (vs. virgin PET production pathway)
-//
-// Source 2 — Water Footprint Network / Pacific Institute (Gleick & Cooley 2009)
-//   → Producing 1 kg PET resin requires ≈ 17.4 L water (cradle-to-gate)
-//   → Average 500 mL PET bottle weighs ~23 g → 17.4 L × 0.023 = ~0.40 L
-//   → Rounding to 0.4 L saved per bottle (conservative estimate)
-//
-// Point-to-bottle conversion:
-//   Backend schema: kecil=10 pts, sedang=20 pts, besar=30 pts
-//   Weighted average: (10+20+30)/3 = 20 pts per bottle
-// ─────────────────────────────────────────────────────────────────────────────
-
-/** kg CO2-eq prevented per 1 recycled PET bottle (NIH LCA study) */
 export const CO2_PER_BOTTLE_KG = 0.0114;
 
 /** litres of water saved per 1 recycled PET bottle (Pacific Institute / Gleick) */
@@ -141,11 +122,6 @@ export type ImpactStats = {
   facultiesCount: number;
 };
 
-/**
- * Compute real environmental impact from total points across all students.
- * `totalPoints` is the sum of all points earned by all students platform-wide.
- * `facultiesCount` is the number of unique faculties in the leaderboard.
- */
 export function computeImpact(totalPoints: number, facultiesCount: number): ImpactStats {
   const totalBottles = Math.round(totalPoints / AVG_POINTS_PER_BOTTLE);
   return {
@@ -155,11 +131,6 @@ export function computeImpact(totalPoints: number, facultiesCount: number): Impa
     facultiesCount,
   };
 }
-
-/**
- * Format litres into human-readable string.
- * < 1000 L → "420 L", >= 1000 → "1,2 kL"
- */
 export function formatLitres(litres: number): string {
   if (litres >= 1000) {
     return new Intl.NumberFormat("id-ID", {
@@ -170,10 +141,6 @@ export function formatLitres(litres: number): string {
   return `${new Intl.NumberFormat("id-ID").format(litres)} L`;
 }
 
-/**
- * Format kg CO2 into human-readable string.
- * < 1000 kg → "3,14 kg", >= 1000 → "1,2 ton"
- */
 export function formatCO2(kg: number): string {
   if (kg >= 1000) {
     return new Intl.NumberFormat("id-ID", {

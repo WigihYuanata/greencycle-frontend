@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { User, Lock, Bell, LogOut, Link2, TrendingUp, Eye, EyeOff, Loader2, Mail } from "lucide-react";
+import { User, Lock, Bell, LogOut, TrendingUp, Eye, EyeOff, Loader2, Mail } from "lucide-react";
 import { useState } from "react";
 import { AuthMode, FACULTIES, cx, digitsOnly } from "@/lib/gc-data";
 
@@ -29,7 +29,6 @@ type Props = {
   onForgot: () => void;
   onLogout: () => void;
   onGoDashboard: () => void;
-  onGoPairing: () => void;
 };
 
 function Field({
@@ -95,7 +94,7 @@ export default function AccountScreen({
   isLoggedIn, isSubmitting, authMode, setAuthMode,
   profile, loginForm, setLoginForm, registerForm, setRegisterForm,
   forgotStep, setForgotStep, forgotForm, setForgotForm,
-  onLogin, onRegister, onForgot, onLogout, onGoDashboard, onGoPairing,
+  onLogin, onRegister, onForgot, onLogout, onGoDashboard,
 }: Props) {
   const initials = profile.name
     ? profile.name.split(" ").map((p) => p[0]).slice(0, 2).join("")
@@ -135,14 +134,9 @@ export default function AccountScreen({
         <div className="flex flex-col gap-2">
           {[
             {
-              icon: Link2, label: "Hubungkan Kartu",
-              sub: "Pairing satu kali ke Smart BIN terdekat",
-              action: onGoPairing, accent: true,
-            },
-            {
               icon: TrendingUp, label: "Buka Dashboard",
               sub: "Saldo aktif, tren, dan aktivitas",
-              action: onGoDashboard, accent: false,
+              action: onGoDashboard, accent: true,
             },
             {
               icon: LogOut, label: "Keluar",
@@ -190,7 +184,6 @@ export default function AccountScreen({
         <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Autentikasi</p>
         <h1 className="text-xl font-bold text-foreground mt-0.5">Masuk atau daftar</h1>
         <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-          Flow dibuat singkat, jelas, dan ramah untuk semua ukuran layar.
         </p>
       </div>
 
@@ -382,24 +375,16 @@ export default function AccountScreen({
 
       {/* CTA */}
       <div className="rounded-2xl bg-secondary/60 border border-border p-4 flex flex-col gap-3">
-        <p className="font-bold text-sm text-foreground text-balance">Siap dibuat terhubung ke Smart BIN?</p>
+        <p className="font-bold text-sm text-foreground text-balance">Siap untuk mendaur ulang?</p>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Setelah masuk, pairing dan transaksi jadi jauh lebih cepat.
+          Datang ke Smart BIN terdekat dan tap KTM-mu untuk mulai berkontribusi.
         </p>
-        <div className="flex gap-2">
-          <button
-            onClick={onGoPairing}
-            className="flex-1 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 font-semibold text-xs hover:bg-emerald-500/20 transition-colors"
-          >
-            Hubungkan Kartu
-          </button>
-          <button
-            onClick={onGoDashboard}
-            className="flex-1 h-10 rounded-xl bg-secondary border border-border text-foreground font-semibold text-xs hover:bg-secondary/80 transition-colors"
-          >
-            Lihat Dashboard
-          </button>
-        </div>
+        <button
+          onClick={onGoDashboard}
+          className="w-full h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 font-semibold text-xs hover:bg-emerald-500/20 transition-colors"
+        >
+          Lihat Dashboard
+        </button>
       </div>
     </motion.section>
   );

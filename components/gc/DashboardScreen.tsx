@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import {
-  Link2, Link2Off, Recycle, Trophy, User, TrendingUp, Plus, Circle,
+  Link2, Link2Off, Recycle, Trophy, User, TrendingUp, Circle,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Machine, Activity, cx, formatPoints } from "@/lib/gc-data";
@@ -15,7 +15,6 @@ type Props = {
   machines: Machine[];
   activities: Activity[];
   isLoading: boolean;
-  onOpenPairing: () => void;
   onOpenRedeem: () => void;
   onGoLeaderboard: () => void;
   onGoAccount: () => void;
@@ -58,7 +57,7 @@ function LoadingDashboard() {
 export default function DashboardScreen({
   profile, balances, bottles, connectedMachine,
   machines, activities, isLoading,
-  onOpenPairing, onOpenRedeem, onGoLeaderboard, onGoAccount,
+  onOpenRedeem, onGoLeaderboard, onGoAccount,
 }: Props) {
   if (isLoading) return <LoadingDashboard />;
 
@@ -111,7 +110,7 @@ export default function DashboardScreen({
           <div className="p-3.5 rounded-2xl bg-secondary/50 border border-border flex flex-col gap-0.5">
             <p className="text-[10px] text-muted-foreground">Ditukar</p>
             <p className="text-lg font-bold text-foreground">{formatPoints(balances.redeemed)}</p>
-            <p className="text-[10px] text-muted-foreground">Pencairan diproses</p>
+            <p className="text-[10px] text-muted-foreground">Penukaran diproses</p>
           </div>
         </div>
       </motion.div>
@@ -146,18 +145,22 @@ export default function DashboardScreen({
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <button
-            onClick={onOpenPairing}
-            className="h-11 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-sm transition-all duration-150 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5"
+          <div
+            className={cx(
+              "h-11 rounded-2xl font-semibold text-sm flex items-center justify-center gap-1.5",
+              connectedMachine
+                ? "bg-emerald-500/15 border border-emerald-500/20 text-emerald-400"
+                : "bg-secondary border border-border text-muted-foreground",
+            )}
           >
-            <Link2 className="w-4 h-4" />
-            {connectedMachine ? "Ganti / Hubungkan" : "Hubungkan Kartu"}
-          </button>
+            {connectedMachine ? <Link2 className="w-4 h-4" /> : <Link2Off className="w-4 h-4" />}
+            {connectedMachine ? "KTM Terhubung" : "Belum Terhubung"}
+          </div>
           <button
             onClick={onOpenRedeem}
-            className="h-11 rounded-2xl bg-secondary border border-border hover:bg-secondary/80 active:scale-[0.98] text-foreground font-bold text-sm transition-all duration-150 flex items-center justify-center gap-1.5"
+            className="h-11 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-sm transition-all duration-150 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5"
           >
-            <Recycle className="w-4 h-4 text-emerald-400" />
+            <Recycle className="w-4 h-4" />
             Tukar Voucher
           </button>
         </div>
@@ -229,7 +232,6 @@ export default function DashboardScreen({
         <p className="text-sm font-bold text-foreground">Aksi cepat</p>
         <div className="flex flex-col gap-1.5">
           {[
-            { icon: Plus, label: "Hubungkan Kartu", sub: "Pairing sekali saja", action: onOpenPairing },
             { icon: Trophy, label: "Lihat Peringkat", sub: "Top kontributor minggu ini", action: onGoLeaderboard },
             { icon: User, label: "Profil & Akun", sub: "PIN, data, dan status", action: onGoAccount },
           ].map(({ icon: Icon, label, sub, action }) => (

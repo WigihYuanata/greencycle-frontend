@@ -1,13 +1,12 @@
 "use client";
 
-import { Home, TrendingUp, Scan, Trophy, User } from "lucide-react";
+import { Home, TrendingUp, Trophy, User } from "lucide-react";
 import { cx, Screen } from "@/lib/gc-data";
 
 type Props = {
   active: Screen;
   onGoHome: () => void;
   onGoDashboard: () => void;
-  onOpenPairing: () => void;
   onGoLeaderboard: () => void;
   onGoAccount: () => void;
 };
@@ -22,7 +21,7 @@ function NavItem({
       onClick={onClick}
       aria-label={label}
       className={cx(
-        "flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl transition-all duration-150 min-w-0",
+        "flex flex-col items-center gap-0.5 py-2 px-4 rounded-xl transition-all duration-150 min-w-0",
         active
           ? "text-emerald-400"
           : "text-muted-foreground hover:text-foreground",
@@ -34,13 +33,13 @@ function NavItem({
   );
 }
 
-export default function BottomNav({ active, onGoHome, onGoDashboard, onOpenPairing, onGoLeaderboard, onGoAccount }: Props) {
+export default function BottomNav({ active, onGoHome, onGoDashboard, onGoLeaderboard, onGoAccount }: Props) {
   return (
     <nav
       aria-label="Navigasi bawah"
       className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-background/95 backdrop-blur-md border-t border-border/50 px-2 pb-safe"
     >
-      <div className="flex items-end justify-around">
+      <div className="flex items-center justify-around">
         <NavItem
           active={active === "home"}
           label="Beranda"
@@ -53,19 +52,6 @@ export default function BottomNav({ active, onGoHome, onGoDashboard, onOpenPairi
           icon={<TrendingUp className="w-5 h-5" />}
           onClick={onGoDashboard}
         />
-
-        {/* center CTA button */}
-        <div className="flex flex-col items-center gap-0.5 py-1">
-          <button
-            onClick={onOpenPairing}
-            aria-label="Buka pairing"
-            className="w-12 h-12 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 active:scale-95 transition-all duration-150"
-          >
-            <Scan className="w-5 h-5 text-slate-950" />
-          </button>
-          <span className="text-[10px] font-medium text-muted-foreground">Pairing</span>
-        </div>
-
         <NavItem
           active={active === "leaderboard"}
           label="Peringkat"
